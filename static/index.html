@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SentryOps</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", monospace;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      color: #00ff88;
+      letter-spacing: 2px;
+    }
+
+    header p {
+      color: #8b949e;
+      margin-top: 6px;
+      font-size: 0.9rem;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .input-section {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .input-section label {
+      display: block;
+      color: #8b949e;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    textarea {
+      width: 100%;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #c9d1d9;
+      font-size: 0.95rem;
+      padding: 12px;
+      resize: vertical;
+      min-height: 80px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    textarea:focus { border-color: #00ff88; }
+
+    .demos {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .demo-btn {
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #8b949e;
+      cursor: pointer;
+      font-size: 0.78rem;
+      padding: 6px 12px;
+      transition: all 0.2s;
+    }
+
+    .demo-btn:hover { border-color: #00ff88; color: #00ff88; }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    button#analyze-btn {
+      background: #00ff88;
+      border: none;
+      border-radius: 6px;
+      color: #0d1117;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 10px 24px;
+      transition: opacity 0.2s;
+    }
+
+    button#analyze-btn:hover { opacity: 0.85; }
+    button#analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #status { color: #8b949e; font-size: 0.85rem; }
+
+    .report {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .card-title {
+      color: #e6edf3;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .badge {
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      text-transform: uppercase;
+    }
+
+    .badge-critical { background: #3d0000; color: #ff4444; border: 1px solid #ff4444; }
+    .badge-high     { background: #2d1a00; color: #ff8800; border: 1px solid #ff8800; }
+    .badge-medium   { background: #2d2a00; color: #ffcc00; border: 1px solid #ffcc00; }
+    .badge-low      { background: #002d0f; color: #00ff88; border: 1px solid #00ff88; }
+
+    .incident-meta {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .meta-item { display: flex; flex-direction: column; gap: 2px; }
+    .meta-label { color: #8b949e; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+    .meta-value { color: #00ff88; font-size: 0.9rem; font-family: monospace; }
+
+    p.narrative { color: #c9d1d9; font-size: 0.9rem; line-height: 1.7; }
+
+    ul.findings-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    ul.findings-list li {
+      background: #0d1117;
+      border-left: 3px solid #00ff88;
+      border-radius: 0 4px 4px 0;
+      color: #c9d1d9;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      padding: 8px 12px;
+    }
+
+    ul.actions-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    ul.actions-list li {
+      background: #0d1117;
+      border-radius: 4px;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      padding: 8px 12px;
+    }
+
+    .p1 { border-left: 3px solid #ff4444; }
+    .p2 { border-left: 3px solid #ff8800; }
+    .p3 { border-left: 3px solid #ffcc00; }
+
+    .compliance-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .compliance-tag {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      color: #8b949e;
+      font-size: 0.8rem;
+      padding: 4px 10px;
+    }
+
+    .error-box {
+      background: #3d0000;
+      border: 1px solid #ff4444;
+      border-radius: 8px;
+      color: #ff8888;
+      display: none;
+      font-size: 0.9rem;
+      padding: 16px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>SENTRYOPS</h1>
+    <p>AI-Powered Security Incident Analysis</p>
+  </header>
+
+  <div class="container">
+    <div class="input-section">
+      <label>Security Event</label>
+      <textarea id="event-input" placeholder="Describe the security event..."></textarea>
+
+      <div class="demos">
+        <span style="color:#8b949e;font-size:0.78rem;align-self:center;">Demo:</span>
+        <button class="demo-btn" data-event="multiple failed SSH logins from 185.220.101.45 followed by S3 bucket access">Brute Force + Cloud Pivot</button>
+        <button class="demo-btn" data-event="connection attempt from known malicious IP 185.220.101.45 on port 443">Malicious IP</button>
+        <button class="demo-btn" data-event="S3 bucket found with public read access enabled containing customer data">S3 Misconfiguration</button>
+      </div>
+
+      <div class="actions">
+        <button id="analyze-btn">Analyze</button>
+        <span id="status"></span>
+      </div>
+    </div>
+
+    <div class="error-box" id="error-box"></div>
+
+    <div class="report" id="report"></div>
+  </div>
+
+  <script>
+    const demoButtons = document.querySelectorAll('.demo-btn');
+    demoButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('event-input').value = btn.dataset.event;
+      });
+    });
+
+    document.getElementById('analyze-btn').addEventListener('click', async () => {
+      const event = document.getElementById('event-input').value.trim();
+      if (!event) return;
+
+      const btn = document.getElementById('analyze-btn');
+      const status = document.getElementById('status');
+      const reportEl = document.getElementById('report');
+      const errorBox = document.getElementById('error-box');
+
+      btn.disabled = true;
+      status.textContent = 'Running pipeline...';
+      reportEl.style.display = 'none';
+      errorBox.style.display = 'none';
+
+      try {
+        const res = await fetch(`/report?event=${encodeURIComponent(event)}`);
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        const data = await res.json();
+        renderReport(data);
+        status.textContent = '';
+      } catch (err) {
+        errorBox.textContent = `Error: ${err.message}`;
+        errorBox.style.display = 'block';
+        status.textContent = '';
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    function severityClass(s) {
+      return { critical: 'badge-critical', high: 'badge-high', medium: 'badge-medium', low: 'badge-low' }[s] || 'badge-low';
+    }
+
+    function priorityClass(action) {
+      if (action.startsWith('P1')) return 'p1';
+      if (action.startsWith('P2')) return 'p2';
+      return 'p3';
+    }
+
+    function renderReport(d) {
+      const reportEl = document.getElementById('report');
+
+      reportEl.innerHTML = `
+        <!-- Incident Header -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Incident</span>
+            <span class="badge ${severityClass(d.severity)}">${d.severity}</span>
+          </div>
+          <div class="incident-meta">
+            <div class="meta-item">
+              <span class="meta-label">ID</span>
+              <span class="meta-value">${d.incident_id}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Timestamp</span>
+              <span class="meta-value">${new Date(d.timestamp).toUTCString()}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">Executive Summary</span></div>
+          <p class="narrative">${d.executive_summary}</p>
+        </div>
+
+        <!-- Threat Overview -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">Threat Overview</span></div>
+          <p class="narrative">${d.threat_overview}</p>
+        </div>
+
+        <!-- Findings -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">Findings</span></div>
+          <ul class="findings-list">
+            ${d.findings.map(f => `<li>${f}</li>`).join('')}
+          </ul>
+        </div>
+
+        <!-- Recommended Actions -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">Recommended Actions</span></div>
+          <ul class="actions-list">
+            ${d.recommended_actions.map(a => `<li class="${priorityClass(a)}">${a}</li>`).join('')}
+          </ul>
+        </div>
+
+        <!-- Compliance Impact -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">Compliance Impact</span></div>
+          <div class="compliance-tags">
+            ${d.compliance_impact.map(c => `<span class="compliance-tag">${c}</span>`).join('')}
+          </div>
+        </div>
+
+        <!-- Conclusion -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">Conclusion</span></div>
+          <p class="narrative">${d.conclusion}</p>
+        </div>
+      `;
+
+      reportEl.style.display = 'flex';
+      reportEl.scrollIntoView({ behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>
